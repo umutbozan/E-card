@@ -9,8 +9,17 @@
             background-color: var(--bg); color: white; font-family: 'Garamond', serif; 
             margin: 0; padding: 0; min-height: 100vh;
             background-image: radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%);
-            display: flex; flex-direction: column; overflow: hidden;
+            display: flex; flex-direction: row; overflow: hidden;
         }
+
+        /* Yan Kural Paneli */
+        #rule-panel {
+            width: 250px; background: rgba(0,0,0,0.8); border-right: 2px solid var(--gold);
+            padding: 20px; font-size: 0.9rem; line-height: 1.6; color: #ccc;
+        }
+        #rule-panel h3 { color: var(--gold); text-transform: uppercase; border-bottom: 1px solid var(--gold); }
+
+        .main-game { flex: 1; display: flex; flex-direction: column; }
 
         @keyframes slideToTable {
             0% { transform: translateY(100px) scale(0.5); opacity: 0; }
@@ -38,7 +47,6 @@
             border-radius: 10px; cursor: pointer; transition: 0.3s;
         }
         .card.selected { transform: translateY(-30px); border-color: var(--gold); box-shadow: 0 0 20px var(--gold); }
-        .card.disabled { cursor: not-allowed; opacity: 0.7; }
 
         .opponent-card { background-image: url('back.png'); }
         .card.emperor { background-image: url('emperor.png'); }
@@ -61,38 +69,56 @@
 </head>
 <body>
 
-    <div id="selection-screen">
-        <h1 style="color: var(--gold); letter-spacing: 5px;">KAIJI ONLINE</h1>
-        <input type="text" id="room-input" placeholder="Oda Adı" style="padding:10px; margin-bottom:10px; background:#111; color:white; border:1px solid var(--gold);">
-        <button onclick="joinRoom()">ODAYA KATIL</button>
+    <div id="rule-panel">
+        <h3>Kurallar</h3>
+        <ul>
+            <li><b>İmparator:</b> Vatandaşı yener.</li>
+            <li><b>Vatandaş:</b> Köleyi yener.</li>
+            <li><b>Köle:</b> Sadece İmparator'u yener!</li>
+            <br>
+            <li><b>Ödül:</b> Köle ile kazanırsan 5 katı (5000¥)!</li>
+            <li><b>Dönüşüm:</b> Her 3 turda bir roller değişir.</li>
+            <li><b>Sıfırlama:</b> Bir taraf kazandığı an deste yenilenir. Beraberlikte kalan kartlarla devam edilir.</li>
+        </ul>
+        <hr border-color="var(--gold)">
+        <div id="side-info" style="color: var(--gold); font-weight: bold; text-align: center;">Taraf Bekleniyor...</div>
     </div>
 
-    <div class="ui-header">
-        <div class="stat-box"><span class="stat-label">Cüzdan</span><span id="balance" class="stat-value">10,000 ¥</span></div>
-        <div class="stat-box"><span class="stat-label">Skor</span><span id="score" class="stat-value">0 - 0</span></div>
-    </div>
-
-    <div class="game-container">
-        <div class="hand" id="opponent-hand"></div>
-        <div id="status">Bağlantı bekleniyor...</div>
-        <div class="battleground">
-            <div id="slot-opponent" class="placeholder">RAKİP</div>
-            <div id="slot-player" class="placeholder">SEN</div>
+    <div class="main-game">
+        <div id="selection-screen">
+            <h1 style="color: var(--gold); letter-spacing: 5px;">KAIJI ONLINE</h1>
+            <input type="text" id="room-input" placeholder="Oda Adı" style="padding:10px; margin-bottom:10px; background:#111; color:white; border:1px solid var(--gold); text-align: center;">
+            <button onclick="joinRoom()">ODAYA KATIL</button>
         </div>
-        <div class="hand" id="player-hand"></div>
-        <div class="controls">
-            <button id="confirm-btn" class="action-btn" onclick="confirmPlay()">KARTI SÜR</button>
-            <button id="next-btn" class="action-btn" style="background: var(--blood); color: white;" onclick="nextStep()">DEVAM ET ➔</button>
+
+        <div class="ui-header">
+            <div class="stat-box"><span class="stat-label">Cüzdan</span><span id="balance" class="stat-value">10,000 ¥</span></div>
+            <div class="stat-box"><span class="stat-label">Sıra</span><span id="turn-display" class="stat-value">1 / 12</span></div>
+            <div class="stat-box"><span class="stat-label">Skor</span><span id="score" class="stat-value">0 - 0</span></div>
+        </div>
+
+        <div class="game-container">
+            <div class="hand" id="opponent-hand"></div>
+            <div id="status">Kaderini bekliyor...</div>
+            <div class="battleground">
+                <div id="slot-opponent" class="placeholder">RAKİP</div>
+                <div id="slot-player" class="placeholder">SEN</div>
+            </div>
+            <div class="hand" id="player-hand"></div>
+            <div class="controls">
+                <button id="confirm-btn" class="action-btn" onclick="confirmPlay()">KARTI SÜR</button>
+                <button id="next-btn" class="action-btn" style="background: var(--blood); color: white;" onclick="nextStep()">SIRADAKİ EL ➔</button>
+            </div>
         </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let currentRoom = "";
-        let playerSide = "";
+        let currentRoom = "", playerSide = "";
         let playerHand = [], selectedIdx = -1, isWaiting = false;
-        let balance = 10000, pScore = 0, oScore = 0;
+        let balance = 10000, pScore = 0, oScore = 0, totalTurns = 1;
+        let roundShouldReset = false;
 
         function joinRoom() {
             currentRoom = document.getElementById('room-input').value || "genel";
@@ -103,6 +129,7 @@
         socket.on('assigned-side', (side) => {
             playerSide = side;
             document.getElementById('selection-screen').style.display = 'none';
+            document.getElementById('side-info').innerText = "ROLÜN: " + (side === "EMPEROR" ? "İMPARATOR" : "KÖLE");
             initRound();
         });
 
@@ -111,8 +138,10 @@
             playerHand = isEmp ? ["citizen", "citizen", "citizen", "citizen", "emperor"] : ["citizen", "citizen", "citizen", "citizen", "slave"];
             isWaiting = false;
             selectedIdx = -1;
+            roundShouldReset = false;
             renderHands();
-            document.getElementById('status').innerText = "KARTINI SEÇ";
+            document.getElementById('status').innerText = "YENİ DESTE: KARTINI SEÇ";
+            updateUI();
         }
 
         function renderHands() {
@@ -133,7 +162,6 @@
             isWaiting = true;
             document.getElementById('confirm-btn').style.display = 'none';
             document.getElementById('status').innerText = "RAKİP BEKLENİYOR...";
-            
             socket.emit('play-card', { roomId: currentRoom, card: card, idx: selectedIdx });
             document.getElementById('slot-player').innerHTML = `<div class="card ${card} slot-animation"></div>`;
         }
@@ -150,11 +178,22 @@
                 let res = (myCard === oppCard) ? "DRAW" : 
                           ((myCard === "emperor" && oppCard === "citizen") || (myCard === "citizen" && oppCard === "slave") || (myCard === "slave" && oppCard === "emperor")) ? "WIN" : "LOSE";
 
-                if(res === "WIN") { pScore++; document.getElementById('status').innerText = "KAZANDIN!"; }
-                else if(res === "LOSE") { oScore++; document.getElementById('status').innerText = "KAYBETTİN!"; }
-                else { document.getElementById('status').innerText = "BERABERE!"; }
-
-                updateUI();
+                if(res === "DRAW") {
+                    document.getElementById('status').innerText = "BERABERE! (Kalan kartlarla devam)";
+                    roundShouldReset = false;
+                } else {
+                    roundShouldReset = true;
+                    if(res === "WIN") {
+                        pScore++;
+                        let winAmount = (myCard === "slave") ? 5000 : 1000;
+                        balance += winAmount;
+                        document.getElementById('status').innerText = "ZAFER! +" + winAmount + "¥";
+                    } else {
+                        oScore++;
+                        balance -= 1000;
+                        document.getElementById('status').innerText = "MAĞLUBİYET! -1000¥";
+                    }
+                }
                 document.getElementById('next-btn').style.display = 'block';
             }, 800);
         });
@@ -162,17 +201,36 @@
         function nextStep() {
             document.getElementById('next-btn').style.display = 'none';
             if(selectedIdx !== -1) playerHand.splice(selectedIdx, 1);
-            if(playerHand.length === 0) return initRound(); // El bittiyse sıfırla
+            
             selectedIdx = -1;
             isWaiting = false;
-            renderHands();
+
+            if(roundShouldReset || playerHand.length === 0) {
+                totalTurns++;
+                if(totalTurns > 12) {
+                    alert("OYUN BİTTİ! Nihai Skor: " + pScore + "-" + oScore);
+                    location.reload();
+                    return;
+                }
+                if(totalTurns % 3 === 1) {
+                    playerSide = (playerSide === "EMPEROR" ? "SLAVE" : "EMPEROR");
+                    document.getElementById('side-info').innerText = "ROLÜN: " + (playerSide === "EMPEROR" ? "İMPARATOR" : "KÖLE");
+                }
+                initRound();
+            } else {
+                renderHands();
+                document.getElementById('status').innerText = "SIRADAKİ HAMLE";
+            }
+            
             document.getElementById('slot-player').innerHTML = "SEN";
             document.getElementById('slot-opponent').innerHTML = "RAKİP";
-            document.getElementById('status').innerText = "SIRADAKİ HAMLE";
+            updateUI();
         }
 
         function updateUI() {
             document.getElementById('score').innerText = `${pScore} - ${oScore}`;
+            document.getElementById('balance').innerText = balance.toLocaleString() + " ¥";
+            document.getElementById('turn-display').innerText = `${totalTurns} / 12`;
         }
     </script>
 </body>

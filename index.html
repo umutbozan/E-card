@@ -12,17 +12,9 @@
             display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* Kart Animasyonları */
         @keyframes slideToTable {
             0% { transform: translateY(100px) scale(0.5); opacity: 0; }
             100% { transform: translateY(0) scale(1); opacity: 1; }
-        }
-
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            20% { transform: translate(-3px, 0px) rotate(-1deg); }
-            40% { transform: translate(3px, 2px) rotate(1deg); }
-            100% { transform: translate(1px, -1px) rotate(0deg); }
         }
 
         #selection-screen {
@@ -33,28 +25,21 @@
         .ui-header {
             display: flex; justify-content: space-around; align-items: center;
             padding: 15px; border-bottom: 2px solid var(--gold); background: rgba(0,0,0,0.9);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
         }
 
-        .stat-box { border: 1px solid var(--gold); padding: 8px 20px; border-radius: 4px; text-align: center; min-width: 100px; }
-        .stat-label { font-size: 11px; color: var(--gold); text-transform: uppercase; display: block; margin-bottom: 4px; }
-        .stat-value { font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+        .stat-box { border: 1px solid var(--gold); padding: 8px 20px; border-radius: 4px; text-align: center; }
+        .stat-label { font-size: 11px; color: var(--gold); text-transform: uppercase; display: block; }
+        .stat-value { font-size: 20px; font-weight: bold; }
 
         .game-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 20px; }
-        
-        .hand { display: flex; gap: 12px; height: 160px; align-items: center; perspective: 1000px; }
-        
+        .hand { display: flex; gap: 12px; height: 160px; align-items: center; }
         .card {
             width: 100px; height: 150px; background-size: cover; border: 2px solid #444;
-            border-radius: 10px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.7); position: relative;
+            border-radius: 10px; cursor: pointer; transition: 0.3s;
         }
+        .card.selected { transform: translateY(-30px); border-color: var(--gold); box-shadow: 0 0 20px var(--gold); }
+        .card.disabled { cursor: not-allowed; opacity: 0.7; }
 
-        .card:hover:not(.disabled) { transform: translateY(-20px) rotate(2deg); border-color: var(--gold); z-index: 10; }
-        .card.selected { transform: translateY(-40px); border-color: var(--gold); box-shadow: 0 0 25px var(--gold); }
-        .card.disabled { cursor: not-allowed; filter: grayscale(0.3); }
-
-        /* Kart Görselleri */
         .opponent-card { background-image: url('back.png'); }
         .card.emperor { background-image: url('emperor.png'); }
         .card.citizen { background-image: url('citizen.png'); }
@@ -63,192 +48,131 @@
         .battleground {
             width: 450px; height: 220px; border: 2px solid #222;
             display: flex; justify-content: center; align-items: center; gap: 30px;
-            background: rgba(255,255,255,0.03); border-radius: 15px; position: relative;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            background: rgba(255,255,255,0.03); border-radius: 15px;
         }
 
         .slot-animation { animation: slideToTable 0.5s ease-out forwards; }
+        .placeholder { width: 100px; height: 150px; border: 2px dashed #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #333; }
+        #status { font-size: 1.4rem; color: var(--gold); font-weight: bold; height: 3rem; text-align: center; }
 
-        .placeholder { 
-            width: 100px; height: 150px; border: 2px dashed #333; border-radius: 10px; 
-            display: flex; align-items: center; justify-content: center; 
-            color: #333; font-size: 12px; font-weight: bold; text-transform: uppercase;
-        }
-        
-        #status { font-size: 1.6rem; color: var(--gold); font-weight: bold; height: 3rem; text-shadow: 2px 2px 4px black; }
-
-        button { 
-            background: var(--gold); color: black; border: none; padding: 15px 30px; 
-            font-weight: bold; cursor: pointer; text-transform: uppercase; 
-            transition: 0.3s; letter-spacing: 2px;
-        }
-        button:hover { background: white; box-shadow: 0 0 20px white; }
-
+        button { background: var(--gold); color: black; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .action-btn { display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div id="selection-screen">
-        <h1 style="color: var(--gold); letter-spacing: 10px; font-size: 3rem;">E-CARD</h1>
-        <p style="color: #666; margin-bottom: 30px;">Kaderini belirle...</p>
-        <div style="display: flex; gap: 30px;">
-            <button onclick="startGame('EMPEROR')">İMPARATOR TARAFI</button>
-            <button onclick="startGame('SLAVE')">KÖLE TARAFI</button>
-        </div>
+        <h1 style="color: var(--gold); letter-spacing: 5px;">KAIJI ONLINE</h1>
+        <input type="text" id="room-input" placeholder="Oda Adı" style="padding:10px; margin-bottom:10px; background:#111; color:white; border:1px solid var(--gold);">
+        <button onclick="joinRoom()">ODAYA KATIL</button>
     </div>
 
     <div class="ui-header">
         <div class="stat-box"><span class="stat-label">Cüzdan</span><span id="balance" class="stat-value">10,000 ¥</span></div>
-        <div class="stat-box"><span class="stat-label">Tur</span><span id="turn-count" class="stat-value">1 / 12</span></div>
         <div class="stat-box"><span class="stat-label">Skor</span><span id="score" class="stat-value">0 - 0</span></div>
     </div>
 
     <div class="game-container">
         <div class="hand" id="opponent-hand"></div>
-        
-        <div id="status">Hoş geldin, oyuncu...</div>
-        
+        <div id="status">Bağlantı bekleniyor...</div>
         <div class="battleground">
             <div id="slot-opponent" class="placeholder">RAKİP</div>
             <div id="slot-player" class="placeholder">SEN</div>
         </div>
-        
         <div class="hand" id="player-hand"></div>
-
         <div class="controls">
-            <div id="bet-area">
-                Bahis: <input type="number" id="bet-input" value="1000" step="500" style="background:none; border:1px solid var(--gold); color:white; padding:10px; width:100px; text-align:center;">
-            </div>
             <button id="confirm-btn" class="action-btn" onclick="confirmPlay()">KARTI SÜR</button>
             <button id="next-btn" class="action-btn" style="background: var(--blood); color: white;" onclick="nextStep()">DEVAM ET ➔</button>
         </div>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // ... (Senin mevcut script mantığın ama görsellik eklenmiş hali)
-        let balance = 10000, playerScore = 0, opponentScore = 0;
-        let currentTotalTurn = 1, subTurnCounter = 1, playerSide = "";
-        let playerHand = [], opponentHand = [];
-        let isWaiting = false, selectedIdx = -1, roundEnded = false;
+        const socket = io();
+        let currentRoom = "";
+        let playerSide = "";
+        let playerHand = [], selectedIdx = -1, isWaiting = false;
+        let balance = 10000, pScore = 0, oScore = 0;
 
-        function startGame(side) {
-            playerSide = side;
-            document.getElementById('selection-screen').style.opacity = '0';
-            setTimeout(() => document.getElementById('selection-screen').style.display = 'none', 500);
-            initRound();
+        function joinRoom() {
+            currentRoom = document.getElementById('room-input').value || "genel";
+            socket.emit('join-room', currentRoom);
+            document.getElementById('selection-screen').innerHTML = "<h1>RAKİP BEKLENİYOR...</h1>";
         }
+
+        socket.on('assigned-side', (side) => {
+            playerSide = side;
+            document.getElementById('selection-screen').style.display = 'none';
+            initRound();
+        });
 
         function initRound() {
             const isEmp = playerSide === "EMPEROR";
             playerHand = isEmp ? ["citizen", "citizen", "citizen", "citizen", "emperor"] : ["citizen", "citizen", "citizen", "citizen", "slave"];
-            opponentHand = isEmp ? ["citizen", "citizen", "citizen", "citizen", "slave"] : ["citizen", "citizen", "citizen", "citizen", "emperor"];
-            selectedIdx = -1;
-            roundEnded = false;
-            updateUI();
-            startSubTurn();
-        }
-
-        function startSubTurn() {
-            renderHands();
-            document.getElementById('slot-player').innerHTML = "SEN";
-            document.getElementById('slot-opponent').innerHTML = "RAKİP";
-            document.getElementById('confirm-btn').style.display = 'none';
-            document.getElementById('next-btn').style.display = 'none';
             isWaiting = false;
-            document.getElementById('status').innerText = "KARTINI SEÇ VE KADERİNE RAZI OL";
-        }
-
-        function selectCard(idx) {
-            if(isWaiting || roundEnded) return;
-            selectedIdx = idx;
+            selectedIdx = -1;
             renderHands();
-            document.getElementById('confirm-btn').style.display = 'block';
-        }
-
-        function confirmPlay() {
-            if(isWaiting || selectedIdx === -1) return;
-            isWaiting = true;
-            document.getElementById('confirm-btn').style.display = 'none';
-
-            const pCard = playerHand[selectedIdx];
-            const oIdx = Math.floor(Math.random() * opponentHand.length);
-            const oCard = opponentHand[oIdx];
-
-            // Oyuncu kartını animasyonla masaya koy
-            document.getElementById('slot-player').innerHTML = `<div class="card ${pCard} slot-animation"></div>`;
-            document.getElementById('status').innerText = "RAKİP DÜŞÜNÜYOR...";
-
-            setTimeout(() => {
-                document.getElementById('slot-opponent').innerHTML = `<div class="card ${oCard} slot-animation"></div>`;
-                setTimeout(() => resolveFight(pCard, oCard, selectedIdx, oIdx), 800);
-            }, 1200);
-        }
-
-        function resolveFight(pCard, oCard, pIdx, oIdx) {
-            const bet = parseInt(document.getElementById('bet-input').value);
-            let res = (pCard === oCard) ? "DRAW" : 
-                      ((pCard === "emperor" && oCard === "citizen") || (pCard === "citizen" && oCard === "slave") || (pCard === "slave" && oCard === "emperor")) ? "WIN" : "LOSE";
-
-            roundEnded = true;
-
-            if(res === "DRAW") {
-                document.getElementById('status').innerText = "BERABERE!";
-                playerHand.splice(pIdx, 1);
-                opponentHand.splice(oIdx, 1);
-                document.getElementById('next-btn').onclick = startSubTurn;
-            } else {
-                if(res === "WIN") {
-                    const prize = (playerSide === "SLAVE" && pCard === "slave") ? bet * 5 : bet;
-                    balance += prize; playerScore++;
-                    document.getElementById('status').innerText = "ZAFER SENİN!";
-                } else {
-                    balance -= bet; opponentScore++;
-                    document.getElementById('status').innerText = "KAYBETTİN...";
-                }
-                document.getElementById('next-btn').onclick = nextBigTurn;
-            }
-            
-            document.getElementById('next-btn').style.display = 'block';
-            updateUI();
-        }
-
-        function nextBigTurn() {
-            currentTotalTurn++;
-            if(currentTotalTurn > 12) {
-                alert("OYUN BİTTİ!");
-                location.reload();
-                return;
-            }
-            subTurnCounter++;
-            if(subTurnCounter > 3) {
-                subTurnCounter = 1;
-                playerSide = (playerSide === "EMPEROR") ? "SLAVE" : "EMPEROR";
-            }
-            initRound();
+            document.getElementById('status').innerText = "KARTINI SEÇ";
         }
 
         function renderHands() {
             const pDiv = document.getElementById('player-hand');
-            const oDiv = document.getElementById('opponent-hand');
-            pDiv.innerHTML = ''; oDiv.innerHTML = '';
+            pDiv.innerHTML = '';
             playerHand.forEach((type, i) => {
                 const c = document.createElement('div');
-                c.className = `card ${type} ${i === selectedIdx ? 'selected' : ''} ${roundEnded ? 'disabled' : ''}`;
-                c.onclick = () => selectCard(i);
+                c.className = `card ${type} ${i === selectedIdx ? 'selected' : ''}`;
+                c.onclick = () => { if(!isWaiting) { selectedIdx = i; renderHands(); document.getElementById('confirm-btn').style.display = 'block'; } };
                 pDiv.appendChild(c);
             });
-            opponentHand.forEach(() => {
-                const c = document.createElement('div');
-                c.className = 'card opponent-card disabled';
-                oDiv.appendChild(c);
-            });
+            document.getElementById('opponent-hand').innerHTML = '<div class="card opponent-card"></div>'.repeat(playerHand.length);
+        }
+
+        function confirmPlay() {
+            if(selectedIdx === -1 || isWaiting) return;
+            const card = playerHand[selectedIdx];
+            isWaiting = true;
+            document.getElementById('confirm-btn').style.display = 'none';
+            document.getElementById('status').innerText = "RAKİP BEKLENİYOR...";
+            
+            socket.emit('play-card', { roomId: currentRoom, card: card, idx: selectedIdx });
+            document.getElementById('slot-player').innerHTML = `<div class="card ${card} slot-animation"></div>`;
+        }
+
+        socket.on('resolve-cards', (hands) => {
+            const myId = socket.id;
+            const oppId = Object.keys(hands).find(id => id !== myId);
+            const myCard = hands[myId].card;
+            const oppCard = hands[oppId].card;
+
+            document.getElementById('slot-opponent').innerHTML = `<div class="card ${oppCard} slot-animation"></div>`;
+            
+            setTimeout(() => {
+                let res = (myCard === oppCard) ? "DRAW" : 
+                          ((myCard === "emperor" && oppCard === "citizen") || (myCard === "citizen" && oppCard === "slave") || (myCard === "slave" && oppCard === "emperor")) ? "WIN" : "LOSE";
+
+                if(res === "WIN") { pScore++; document.getElementById('status').innerText = "KAZANDIN!"; }
+                else if(res === "LOSE") { oScore++; document.getElementById('status').innerText = "KAYBETTİN!"; }
+                else { document.getElementById('status').innerText = "BERABERE!"; }
+
+                updateUI();
+                document.getElementById('next-btn').style.display = 'block';
+            }, 800);
+        });
+
+        function nextStep() {
+            document.getElementById('next-btn').style.display = 'none';
+            if(selectedIdx !== -1) playerHand.splice(selectedIdx, 1);
+            if(playerHand.length === 0) return initRound(); // El bittiyse sıfırla
+            selectedIdx = -1;
+            isWaiting = false;
+            renderHands();
+            document.getElementById('slot-player').innerHTML = "SEN";
+            document.getElementById('slot-opponent').innerHTML = "RAKİP";
+            document.getElementById('status').innerText = "SIRADAKİ HAMLE";
         }
 
         function updateUI() {
-            document.getElementById('balance').innerText = `${balance.toLocaleString()} ¥`;
-            document.getElementById('score').innerText = `${playerScore} - ${opponentScore}`;
-            document.getElementById('turn-count').innerText = `${currentTotalTurn} / 12`;
+            document.getElementById('score').innerText = `${pScore} - ${oScore}`;
         }
     </script>
 </body>

@@ -50,8 +50,10 @@ io.on('connection', (socket) => {
         }
     });
 });
+// Eski hali muhtemelen: const PORT = 8080;
+// Yeni hali şu şekilde olmalı:
+const PORT = process.env.PORT || 8080;
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, '0.0.0.0', () => {
-    console.log(`Kaiji Server ${PORT} portunda aktif.`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Sunucu ${PORT} portunda aktif.`);
 });

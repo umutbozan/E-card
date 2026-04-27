@@ -51,7 +51,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// Railway için kritik port ayarı
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, '0.0.0.0', () => {
     console.log(`Kaiji Server ${PORT} portunda aktif.`);

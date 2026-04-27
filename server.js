@@ -4,6 +4,11 @@ const server = require('http').createServer(app);
 const io = require('socket.io')(server, { cors: { origin: "*" } });
 
 
+app.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy', "script-src 'self' 'unsafe-eval'");
+    next();
+});
+
 app.use(express.static(__dirname));
 
 let rooms = {};

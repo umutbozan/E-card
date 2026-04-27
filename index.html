@@ -7,34 +7,26 @@
     <style>
         :root { --gold: #d4af37; --blood: #8a0303; --bg: #0a0a0a; }
         body { background: var(--bg); color: white; font-family: 'serif'; margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        
         #rules { position: fixed; left: 10px; top: 20px; width: 160px; background: rgba(0,0,0,0.8); border: 1px solid var(--gold); padding: 10px; font-size: 12px; z-index: 5; }
         #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
         .hand { display: flex; gap: 10px; height: 150px; justify-content: center; margin: 20px 0; }
         .card { width: 90px; height: 140px; background-size: cover; border: 2px solid #333; border-radius: 8px; cursor: pointer; transition: 0.3s; }
         .card.selected { transform: translateY(-20px); border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
-        
-        /* Görsel İsimlerinle Tam Uyumlu */
         .card.back { background-image: url('back.png'); }
         .card.emperor { background-image: url('emperor.png'); }
         .card.citizen { background-image: url('citizen.png'); }
         .card.slave { background-image: url('slave.png'); }
-
         #battle-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #status { color: var(--gold); font-size: 1.5rem; text-align: center; margin-bottom: 20px; text-shadow: 0 0 10px black; }
-        
         button { background: var(--gold); color: black; border: none; padding: 15px 30px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
         input { padding: 10px; text-align: center; background: #222; border: 1px solid var(--gold); color: white; margin: 5px; }
     </style>
 </head>
 <body>
-
     <div id="rules">
         <h4 style="color:var(--gold); margin:0">HİYERARŞİ</h4>
         İmparator > Vatandaş<br>Vatandaş > Köle<br>Köle > İmparator
     </div>
-
     <div id="overlay">
         <div id="setup-ui">
             <h2 style="color:var(--gold)">GİZLİ DÜELLO</h2>
@@ -47,49 +39,41 @@
             <button onclick="submitAns()">GÖNDER</button>
         </div>
     </div>
-
     <div id="battle-area">
         <div class="hand" id="opp-hand"></div>
         <div id="status">Bağlantı bekleniyor...</div>
         <div class="hand" id="my-hand"></div>
         <button id="send-btn" style="display:none;" onclick="play()">KARTI MASAYA SÜR</button>
     </div>
-
     <script>
         const socket = io();
         let mySide, roomId, myHand = [], startTime, selectedIdx = -1;
-
         function join() {
             roomId = document.getElementById('room-id').value;
             if(!roomId) return;
             socket.emit('join-room', roomId);
             document.getElementById('setup-ui').innerHTML = "<h2>RAKİP BEKLENİYOR...</h2>";
         }
-
         socket.on('assigned-side', side => {
             mySide = side;
             myHand = side === "EMPEROR" ? ["citizen","citizen","citizen","citizen","emperor"] : ["citizen","citizen","citizen","citizen","slave"];
         });
-
         socket.on('start-challenge', data => {
             document.getElementById('setup-ui').style.display = 'none';
             document.getElementById('challenge-ui').style.display = 'block';
             document.getElementById('q-text').innerText = data.question;
             startTime = Date.now();
         });
-
         function submitAns() {
             const timeTaken = Date.now() - startTime;
             socket.emit('challenge-complete', { roomId, speed: timeTaken });
             document.getElementById('challenge-ui').innerHTML = "<h2 style='color:var(--gold)'>RAKİBİN CEVABI BEKLENİYOR...</h2>";
         }
-
         socket.on('challenge-result', data => {
             document.getElementById('overlay').style.display = 'none';
             render();
             document.getElementById('status').innerText = data.firstPlayer === socket.id ? "Hızlıydın! İlk hamle sende." : "Rakip daha hızlı davrandı!";
         });
-
         function render() {
             const container = document.getElementById('my-hand');
             container.innerHTML = '';
@@ -101,19 +85,15 @@
             });
             document.getElementById('opp-hand').innerHTML = '<div class="card back"></div>'.repeat(myHand.length);
         }
-
         function play() {
             socket.emit('play-card', { roomId, card: myHand[selectedIdx], idx: selectedIdx });
             document.getElementById('send-btn').style.display = 'none';
             document.getElementById('status').innerText = "Kart masada. Rakip bekleniyor...";
-            // Kartı elimizden görsel olarak çıkaralım
             myHand.splice(selectedIdx, 1);
             selectedIdx = -1;
             render();
         }
-
         socket.on('opponent-ready', () => { document.getElementById('status').innerText = "Rakip kartını seçti!"; });
-
         socket.on('resolve-cards', data => {
             alert("Hamleler yapıldı! Sonuçlar sunucuda hesaplanıyor...");
             location.reload(); 
